@@ -9,22 +9,34 @@ import HighSpeed from './HighSpeed';
 import Journey from './Journey';
 import Submit from './Submit';
 
-import CitySelector from "../common/CitySelector";
+import CitySelector from '../common/CitySelector';
+import DateSelector from '../common/DateSelector';
 
-import { exchangeFromTo, showCitySelector, hideCitySelector, fetchCityData, setSelectedCity } from './actions';
+import {
+  exchangeFromTo,
+  showCitySelector,
+  hideCitySelector,
+  fetchCityData,
+  setSelectedCity,
+  showDateSelector,
+  hideDateSelector,
+  setDepartDate,
+  toggleHighSpeed,
+} from './actions';
+import { h0 } from '../common/fp';
 
 function App(props) {
   const {
     from,
     to,
     isCitySelectorVisible,
-    // isDateSelectorVisible,
+    isDateSelectorVisible,
     cityData,
     isLoadingCityData,
-    // highSpeed,
+    highSpeed,
     dispatch,
-    // departDate,
-} = props;
+    departDate,
+  } = props;
 
   const onBack = useCallback(() => {
     window.history.back();
@@ -48,18 +60,55 @@ function App(props) {
         onSelect: setSelectedCity,
       },
       dispatch
-    )
-  }, [dispatch])
+    );
+  }, [dispatch]);
+
+  const departDateCbs = useMemo(() => {
+    return bindActionCreators(
+      {
+        onClick: showDateSelector,
+      },
+      dispatch
+    );
+  }, [dispatch]);
+
+  const dateSelectorCbs = useMemo(() => {
+    return bindActionCreators(
+      {
+        onBack: hideDateSelector,
+      },
+      dispatch
+    );
+  }, [dispatch]);
+
+  const onSelectDate = useCallback(
+    day => {
+      if (!day) return;
+      if (day < h0()) return;
+      dispatch(setDepartDate(day));
+      dispatch(hideDateSelector());
+    },
+    [dispatch]
+  );
+
+  const highSpeedCbs = useMemo(() => {
+    return bindActionCreators(
+      {
+        toggle: toggleHighSpeed,
+      },
+      dispatch
+    );
+  }, [dispatch]);
 
   return (
     <div>
       <div className="header-wrapper">
         <Header title="火车票" onBack={onBack} />
       </div>
-      <form className="form">
+      <form className="form" action="./query.html">
         <Journey from={from} to={to} {...cbs} />
-        <DepartDate />
-        <HighSpeed />
+        <DepartDate time={departDate} {...departDateCbs} />
+        <HighSpeed highSpeed={highSpeed} {...highSpeedCbs}/>
         <Submit />
       </form>
       <CitySelector
@@ -67,8 +116,12 @@ function App(props) {
         cityData={cityData}
         isLoading={isLoadingCityData}
         {...citySelectorCbs}
-      >
-      </CitySelector>
+      ></CitySelector>
+      <DateSelector
+        show={isDateSelectorVisible}
+        onSelect={onSelectDate}
+        {...dateSelectorCbs}
+      ></DateSelector>
     </div>
   );
 }
